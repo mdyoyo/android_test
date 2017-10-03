@@ -1,0 +1,140 @@
+import org.apache.commons.codec.digest.DigestUtils
+
+buildscript {
+    repositories defaultRepositories
+    dependencies {
+        classpath "com.android.tools.build:gradle:2.3.1"
+    }
+}
+
+def generateDexMd5(buildType, dexFiles, resourceFile) {
+
+    println "generateDexMd5 $buildType"
+
+    String result = "[";
+    String jsonFormat = "{\"name\":\"%s\",\"md5\":\"%s\",\"size\":\"%d\"}"
+    boolean isFirstItem = true
+    dexFiles.each {
+        def sourceTree = fileTree(dir: it.absolutePath, include: ["*.dex"])
+        println("sourceTree size " + sourceTree.size())
+        sourceTree.each { File file ->
+            String md5 = ""
+            file.withInputStream { ins ->
+                md5 = DigestUtils.md5Hex(ins)
+            }
+
+            println file.name + " md5:" + md5
+
+            String json = String.format(jsonFormat, file.name, md5, file.length())
+            result += isFirstItem ? json : ("," + json)
+            isFirstItem = false
+        }
+    }
+
+    result += "]"
+
+    def outputsDir = "$project.buildDir/outputs"
+    def patchDir = "$outputsDir/patch/$buildType"
+    def sourceApk = resourceFile
+    def tmpAssets = "${resourceFile.parent}/assets"
+
+    file(tmpAssets).mkdir()
+    file("$tmpAssets/dexes.ini").write(result.toString())
+
+    // 备份dexes.ini
+    copy {
+        from tmpAssets
+        into patchDir
+        include("dexes.ini")
+    }
+
+    exec {
+        executable "${android.sdkDirectory.path}/build-tools/${project.android.buildToolsVersion}/aapt"
+        args "a", sourceApk, "assets/dexes.ini"
+        workingDir resourceFile.parent
+    }
+
+    if (buildType.contains("patch")) {
+        file("$tmpAssets/patch.stub").write("patch version")
+
+        exec {
+            executable "${android.sdkDirectory.path}/build-tools/${project.android.buildToolsVersion}/aapt"
+            args "a", sourceApk, "assets/patch.stub"
+            workingDir resourceFile.parent
+        }
+    }
+
+    file("$patchDir/version.txt").write("${project.android.defaultConfig.versionCode}\n${project.android.defaultConfig.versionName}")
+    file(tmpAssets).deleteDir()
+}
+
+def backupPatchConfigFiles(flavor, buildName, backupFolder) {
+    println "backupPatchConfigFiles:" + flavor + " backupFolder:" + backupFolder
+    copy {
+        // 备份mapping
+        from "${buildDir}/outputs/mapping/${flavor}/${buildName}/mapping.txt"
+        into backupFolder
+
+        // 备份R.txt
+        from "${buildDir}/intermediates/symbols/${flavor}/${buildName}/R.txt"
+        into backupFolder
+
+        // 备份maindexlist
+        from "${buildDir}/intermediates/multi-dex/${flavor}/${buildName}/maindexlist.txt"
+        into backupFolder
+    }
+}
+
+def prePatchBuildConfig(configRootDir, variantName) {
+    println "configRootDir:" + configRootDir
+    def zip = zipTree("$configRootDir/$variantName/release_config.zip")
+    def releaseConfigDir = file("$configRootDir/$variantName/release_config")
+    def patchBase = file(configRootDir).getParentFile()
+    releaseConfigDir.deleteDir()
+
+    // unzip configZip
+    copy {
+        from zip
+        into releaseConfigDir
+    }
+
+    // copy mapping.txt
+    copy {
+        from releaseConfigDir
+        into patchBase
+        include "mapping.txt"
+    }
+}
+
+
+def recoveryRForPatch(resDir, variantName) {
+    def RTxt = "${rootProject.getProjectDir()}/buildConfig/patch/patchConfigs/${variantName}/release_config/R.txt"
+    processResourceId(resDir, RTxt)
+}
+
+def recoveryRForRdm(resDir) {
+    def RTxt = "$rootProject.rootDir/buildConfig/patch/patchConfigs/fixedRId/R.txt"
+    processResourceId(resDir, RTxt)
+}
+
+def processResourceId(resDir, resFile) {
+    println 'Res Dir: ' + resDir
+    println 'Res File: ' + resFile
+
+    def patchDir = "${rootProject.getProjectDir()}/buildConfig/patch"
+
+    javaexec {
+        classpath "${patchDir}/bin/residprocessor.jar"
+        main = "com.tencent.sigma.ResIdProcessor";
+        args = [resDir, resFile]
+    }
+}
+
+ext {
+    prePatchBuildConfig = this.&prePatchBuildConfig
+    recoveryRForPatch = this.&recoveryRForPatch
+    recoveryRForRdm = this.&recoveryRForRdm
+    generateDexMd5 = this.&generateDexMd5
+    modifyMainDexList = this.&modifyMainDexList
+    backupPatchConfigFiles = this.&backupPatchConfigFiles
+}

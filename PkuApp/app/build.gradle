@@ -1,0 +1,107 @@
+apply plugin: 'com.android.application'
+apply from: './gradle/patch.gradle'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "25.0.3"
+    defaultConfig {
+        applicationId "com.example.chen.pkuapp"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        debug {
+            buildConfigField "boolean", "PATCH_VERSION", "false"
+            debuggable true
+        }
+        release {
+            buildConfigField "boolean", "PATCH_VERSION", "false"
+            debuggable false
+            minifyEnabled true   //
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release_for_patch.initWith(release)
+        release_for_patch {
+            buildConfigField "boolean", "PATCH_VERSION", "true"
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', "../buildConfig/patch/proguard_patch.pro"
+        }
+    }
+    flavorDimensions "buildType", "productEdition"
+    productFlavors {
+        // 标准构建
+        standard_ {
+            dimension "buildType"
+        }
+        // 普通版
+        normal_ {
+            dimension "productEdition"
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:25.1.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha7'
+    testCompile 'junit:junit:4.12'
+
+    debugCompile(name: 'hotpatch-debug', ext: 'aar')
+    releaseCompile(name: 'hotpatch-release', ext: 'aar')
+//        release_for_patchCompile(name: 'hotpatch-release', ext: 'aar')
+}
+
+afterEvaluate {
+    android.applicationVariants.all { variant ->
+        def variantName = variant.name
+        def variantNameCapitalize = variantName.capitalize()
+        def variantNameLowerCase = variantName.toLowerCase()
+        def buildType = variant.buildType.name
+        def flavor = variant.flavorName
+        println "buildType:" + buildType + " flavor:" + flavor + " variantName:" + variantName
+
+        // 打包完成后,备份此次打包的信息,供下次打patch使用
+        def buildApkTask = tasks.findByName("assemble${variantNameCapitalize}")
+        buildApkTask.doLast {
+            def backFolder = file("${buildDir}/outputs/patch/${variantNameLowerCase}")
+            backupPatchConfigFiles(flavor, buildType, backFolder)
+        }
+        // hook prepareDependenciesTask 去log，修改oem配置等
+        def prepareDependenciesTask = tasks.findByName("prepare${variantNameCapitalize}Dependencies")
+        prepareDependenciesTask.doFirst {
+            beforePrepareDependencies(variant, variantNameLowerCase)
+        }
+        variant.outputs.each {
+              println "it.name:" + it.name + " it:" + it
+              def res = it.processResources.resDir
+              def name = it.name.toLowerCase()
+
+              it.processResources.doFirst {
+                  // 打patch时 根据R.txt生成新的R
+                  if (name.contains("patch")) {
+                      recoveryRForPatch(res, variantNameLowerCase)
+                  }
+              }
+
+              // 打完包后插入 dexes.ini
+              it.packageApplication.doFirst {
+                  generateDexMd5(variantName.toLowerCase(), it.dexFolders, it.resourceFile)
+              }
+              it.outputFile = new File(it.outputFile.parent, variantNameLowerCase + ".apk")
+          }
+    }
+}
+
+def beforePrepareDependencies(def variant, def variantName) {
+    def buildType = variant.buildType.name
+
+    if (buildType == "release_for_patch") {
+        prePatchBuildConfig("$rootProject.rootDir/buildConfig/patch/patchConfigs/", variantName)
+    }
+}
