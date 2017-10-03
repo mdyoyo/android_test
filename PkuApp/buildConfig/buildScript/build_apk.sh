@@ -13,11 +13,7 @@ ls $ANDROID_HOME/build-tools
 buildTypes=$1
 buildTypes=${buildTypes//,/ }
 
-releaseFile="release.log"
 nowDate=$(date +"%m_%d_%H")
-if [ -f "$releaseFile" ]; then
-	rm -rf ${releaseFile}
-fi
 BaseLine="${BaseLine//\./_}"
 BaseLine="${BaseLine//qqnews/TencentNews}"
 filename=${BaseLine}_${nowDate}
@@ -31,7 +27,7 @@ for i in ${buildTypes[@]}
 	rm -f $BUILD_OUTPUT_DIR/*-unaligned.apk
 	for f in `ls $BUILD_OUTPUT_DIR/`
 	do
-	    mv $BUILD_OUTPUT_DIR/${f} bin/${filename}_${f}
+	    cp $BUILD_OUTPUT_DIR/${f} bin/${filename}_${f}
 	    md5sum bin/${filename}_${f} > bin/${f}.txt
 	    echo '  encrypted MD5: ' >> bin/${f}.txt
 	    md5sum bin/${filename}_${f} | cut -f1 -d' ' | openssl rsautl -sign -inkey ./buildConfig/patch//privateKey/keyn.txt | base64 | tr -d '\n' >> bin/${f}.txt

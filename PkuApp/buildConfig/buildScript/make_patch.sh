@@ -37,11 +37,6 @@ do
     patchVersionName=`sed -n 2p $_VERSION`
 
     chmod +x $DIFF
-    if [ $type == "target_23_normal_release_for_patch" ];then
-       BUILD_TYPE="_23"
-       echo "build target23"
-    fi
-
     for file_new in ./$NEWDEX/*.dex
     do
         file_old=./$OLDDEX/$(basename $file_new)

@@ -24,3 +24,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 -dontwarn com.tencent.sigma.patch.*
+-keep class com.tencent.sigma.patch.** {*;}

@@ -71,9 +71,9 @@ def generateDexMd5(buildType, dexFiles, resourceFile) {
 def backupPatchConfigFiles(flavor, buildName, backupFolder) {
     println "backupPatchConfigFiles:" + flavor + " backupFolder:" + backupFolder
     copy {
-        // 备份mapping
-        from "${buildDir}/outputs/mapping/${flavor}/${buildName}/mapping.txt"
-        into backupFolder
+//        // 备份mapping
+//        from "${buildDir}/outputs/mapping/${flavor}/${buildName}/mapping.txt"
+//        into backupFolder
 
         // 备份R.txt
         from "${buildDir}/intermediates/symbols/${flavor}/${buildName}/R.txt"

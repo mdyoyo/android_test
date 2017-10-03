@@ -8,8 +8,8 @@ android {
         applicationId "com.example.chen.pkuapp"
         minSdkVersion 15
         targetSdkVersion 23
-        versionCode 1020
-        versionName "1.0.20"
+        versionCode 1041
+        versionName "1.0.41"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     //签名
@@ -31,14 +31,16 @@ android {
         release.initWith(debug)
         release {
             debuggable false
-            minifyEnabled true   //
+//            minifyEnabled true   //
             shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+//            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+//            proguardFiles '../proguard-rules.pro'
+
         }
         release_for_patch.initWith(release)
         release_for_patch {
             buildConfigField "boolean", "PATCH_VERSION", "true"
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', "../buildConfig/patch/proguard_patch.pro"
+//            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', "../buildConfig/patch/proguard_patch.pro"
         }
     }
     flavorDimensions "buildType", "productEdition"
@@ -66,7 +68,7 @@ dependencies {
 
     debugCompile(name: 'hotpatch-debug', ext: 'aar')
     releaseCompile(name: 'hotpatch-release', ext: 'aar')
-//        release_for_patchCompile(name: 'hotpatch-release', ext: 'aar')
+    release_for_patchCompile(name: 'hotpatch-release', ext: 'aar')
 }
 
 afterEvaluate {
