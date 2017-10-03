@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">PkuApp</string>
     <string name="pku_name">北京大学</string>
+    <string name="welcome">欢迎来到首页</string>
+    <string name="button">click me</string>
+    <string name="button_start">点击跳转</string>
+
 </resources>
