@@ -8,17 +8,28 @@ android {
         applicationId "com.example.chen.pkuapp"
         minSdkVersion 15
         targetSdkVersion 23
-        versionCode 1000
-        versionName "1.0.0"
+        versionCode 1020
+        versionName "1.0.20"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    //签名
+    signingConfigs {
+        release {
+            storeFile file("../qqcy.keystore")
+            storePassword "tracyma@tencent.com"
+            keyAlias "android cy"
+            keyPassword "tracyma@tencent.com"
+            v2SigningEnabled false
+        }
     }
     buildTypes {
         debug {
             buildConfigField "boolean", "PATCH_VERSION", "false"
             debuggable true
+            signingConfig signingConfigs.release
         }
+        release.initWith(debug)
         release {
-            buildConfigField "boolean", "PATCH_VERSION", "false"
             debuggable false
             minifyEnabled true   //
             shrinkResources false
@@ -41,6 +52,7 @@ android {
             dimension "productEdition"
         }
     }
+
 }
 
 dependencies {
