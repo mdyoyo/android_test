@@ -21,7 +21,7 @@ aaptBin=$ANDROID_HOME/build-tools/`ls $ANDROID_HOME/build-tools | tail -n 1`/aap
 
 for type in ${buildTypes[@]}
 do
-    _VERSION="../../main/build/outputs/patch/$type/version.txt"
+    _VERSION="../../app/build/outputs/patch/$type/version.txt"
     patchVersion=`sed -n 1p $_VERSION`
     patchVersionName=`sed -n 2p $_VERSION`
 
@@ -35,8 +35,8 @@ do
     rm -rf $OLDRES/*
     rm -rf $NEWRES/*
 
-    cp $TARGET/*release_for_patch.apk $NEWRES/new.apk
-    cp ./patchConfigs/$configType/*.apk $OLDRES/old.apk
+    cp $TARGET/*.apk $NEWRES/new.apk
+    cp ./patchConfigs/${type}/*.apk $OLDRES/old.apk
 
     # 解压新的apk
     unzip $NEWRES/*.apk -d $NEWRES/tmp/
@@ -62,7 +62,7 @@ do
     diff -qr $NEWRES/tmp $OLDRES/tmp > $OUPUT/${buildType}_diff.tmp
 
     # 查找全新添加的文件
-    grep "Only in $NEWRES/tmp" $OUPUT/${buildType}_diff.tmp | sed "s/:\s/\//" | cut -f3 -d " " > $OUPUT/${buildType}_add
+    grep "Only in $NEWRES/tmp" $OUPUT/${buildType}_diff.tmp | sed "s/:[ ]/\//" | cut -f3 -d " " > $OUPUT/${buildType}_add
 
     # 查找修改的文件
     grep "Files $NEWRES/tmp" $OUPUT/${buildType}_diff.tmp | cut -f2 -d " " > $OUPUT/${buildType}_modify
@@ -91,8 +91,8 @@ do
     rm -rf $OLDDEX/*
     rm -rf  $NEWDEX/*
 
-    cp $TARGET/*release_for_patch.apk $NEWDEX/new.apk
-    cp ./patchConfigs/$configType/*.apk $OLDDEX/old.apk
+    cp $TARGET/*.apk $NEWDEX/new.apk
+    cp ./patchConfigs/${type}/*.apk $OLDDEX/old.apk
     unzip ./$OLDDEX/*.apk "*.dex" -d ./$OLDDEX
     unzip ./$NEWDEX/*.apk "*.dex" -d ./$NEWDEX
 
@@ -123,7 +123,7 @@ do
         newDexStr=$newDexStr"{\"name\":\"$(basename $dex_new)\",\"md5\":\"$newDexMd5\"},"
     done
     #删除最后一个多余的,
-    newDexStr=${newDexStr::-1}
+    newDexStr=${newDexStr%?}
     newDexStr=$newDexStr"]"
 
     for dex_old in ./$OLDDEX/*.dex
@@ -132,14 +132,13 @@ do
         oldDexStr=$oldDexStr"{\"name\":\"$(basename $dex_old)\",\"md5\":\"$oldDexMd5\"},"
     done
     #删除最后一个多余的,
-    oldDexStr=${oldDexStr::-1}
+    oldDexStr=${oldDexStr%?}
     oldDexStr=$oldDexStr"]"
 
     patchZipMd5=`md5sum $TARGET/patchdiff.zip | cut -f1 -d' '`
-    patchZipSize=`du -b $TARGET/patchdiff.zip | cut -f1`
+    patchZipSize=`du -h $TARGET/patchdiff.zip | cut -f1`
 
     echo "{\"ret\":0,\"url\":\"$url\","$newDexStr","$oldDexStr",""\"diffMethod\":1,\"patchType\":2,\"isForceInstall\":true,"\
     "\"version\":\"$patchVersion\",\"versionName\":\"$patchVersionName\",\"open\":1,\"patchPackageMd5\":\"$patchZipMd5\",\"size\":$patchZipSize}" >  $TARGET/patch.json
 
-    rm -rf ./temp
 done

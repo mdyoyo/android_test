@@ -1,0 +1,6 @@
+Only in temp/oldres/tmp: AndroidManifest.xml
+Only in temp/oldres/tmp/assets: dexes.ini
+Only in temp/newres/tmp/assets: patch.stub
+Only in temp/newres/tmp/res/drawable: black.png
+Files temp/newres/tmp/res/layout/activity_second.xml and temp/oldres/tmp/res/layout/activity_second.xml differ
+Files temp/newres/tmp/resources.arsc and temp/oldres/tmp/resources.arsc differ

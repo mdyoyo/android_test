@@ -8,8 +8,8 @@ android {
         applicationId "com.example.chen.pkuapp"
         minSdkVersion 15
         targetSdkVersion 23
-        versionCode 1041
-        versionName "1.0.41"
+        versionCode 1051
+        versionName "1.0.51"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     //签名
