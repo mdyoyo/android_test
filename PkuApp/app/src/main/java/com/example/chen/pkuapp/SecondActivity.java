@@ -3,7 +3,6 @@ package com.example.chen.pkuapp;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.TextView;
 
 /**
  * Created by chen on 17/9/26.

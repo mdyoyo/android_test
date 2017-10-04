@@ -15,10 +15,10 @@ android {
     //签名
     signingConfigs {
         release {
-            storeFile file("../qqcy.keystore")
-            storePassword "tracyma@tencent.com"
-            keyAlias "android cy"
-            keyPassword "tracyma@tencent.com"
+            storeFile file("../pku.keystore.jks")
+            storePassword "123456"
+            keyAlias "pku"
+            keyPassword "123456"
             v2SigningEnabled false
         }
     }
